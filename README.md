@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # AI-Powered Project Idea Generator 🚀
 
 An intelligent, full-stack academic project recommendation platform built using **Python Flask**, **SQLite**, **HTML5/CSS3/JavaScript**, **Pytest**, and **Jenkins CI/CD**. The application helps students select, evaluate, and plan academic projects tailored to their domain, technical skill set, and target difficulty tier.
@@ -160,3 +161,7 @@ python -m pytest tests/ -v
 ## 📜 License & Author
 
 Developed as an academic software engineering reference project. Distributed under the MIT License.
+=======
+# AI--Project-idea-generator
+AI-Powered Project Idea Generator is a web application that recommends academic and innovative project ideas based on a student's domain, skills, and difficulty level. The project integrates GitHub version control and Jenkins CI/CD for automated testing and build workflows.
+>>>>>>> ccc079d38edfa067a43da7bc2e288d4484c020fe
