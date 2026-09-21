@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | IdeaGen AI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <a href="{{ url_for('index') }}" class="nav-brand">
+      <svg viewBox="0 0 24 24" width="30" height="30" fill="url(#brandGradient)">
+        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+      </svg>
+      <span>IdeaGen AI</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="{{ url_for('index') }}" class="nav-link">Home</a></li>
+      <li><a href="{{ url_for('generator') }}" class="nav-link">Generator</a></li>
+      <li><a href="{{ url_for('view_saved') }}" class="nav-link">Saved Ideas</a></li>
+      <li><a href="{{ url_for('admin_dashboard') }}" class="nav-link active">Admin Panel</a></li>
+      {% if session.get('is_admin') %}
+        <li><a href="{{ url_for('admin_logout') }}" class="nav-link" style="color: #fb7185;">Logout</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+
+  <div class="container">
+    
+    <!-- Flash Messages Container -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="alert-container">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% if login_mode %}
+      <!-- ADMIN LOGIN FORM -->
+      <div style="max-width: 450px; margin: 3rem auto;">
+        <div class="form-card">
+          <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="font-size: 3rem; margin-bottom: 0.5rem;">🔐</div>
+            <h1 style="font-size: 2rem;">Admin Authentication</h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem;">Enter credentials to access system management.</p>
+          </div>
+
+          <form action="{{ url_for('admin_login') }}" method="POST">
+            <div class="form-group">
+              <label for="username" class="form-label">Username</label>
+              <input type="text" id="username" name="username" class="form-control" placeholder="admin" required autofocus>
+            </div>
+
+            <div class="form-group">
+              <label for="password" class="form-label">Password</label>
+              <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.9rem; margin-top: 1rem; justify-content: center;">
+              Sign In to Admin Panel
+            </button>
+          </form>
+
+          <div style="margin-top: 1.5rem; text-align: center; font-size: 0.85rem; color: var(--text-muted);">
+            Default Credentials: <code>admin</code> / <code>admin123</code>
+          </div>
+        </div>
+      </div>
+
+    {% else %}
+
+      <!-- ADMIN DASHBOARD CONTENT -->
+      <div class="results-header">
+        <div>
+          <h1 style="font-size: 2.2rem; margin-bottom: 0.5rem;">Administrator Management Console</h1>
+          <p style="color: var(--text-muted);">Monitor analytics, add new project templates, and edit existing project records.</p>
+        </div>
+
+        <div style="display: flex; gap: 1rem;">
+          <button class="btn btn-primary" onclick="openModal('addModal')">
+            ➕ Add New Project Idea
+          </button>
+          <a href="{{ url_for('admin_logout') }}" class="btn btn-secondary">
+            🚪 Logout
+          </a>
+        </div>
+      </div>
+
+      <!-- ANALYTICS CARDS -->
+      <section class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number">{{ stats.total_users }}</div>
+          <div class="stat-label">Total Registered Users</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{{ stats.total_projects }}</div>
+          <div class="stat-label">Published Project Ideas</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{{ stats.total_saved }}</div>
+          <div class="stat-label">Saved Library Projects</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{{ stats.total_generations }}</div>
+          <div class="stat-label">Total Executed Generations</div>
+        </div>
+      </section>
+
+      <!-- DOMAIN POPULARITY BREAKDOWN -->
+      {% if stats.domain_stats %}
+        <div style="background: var(--bg-card); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 2.5rem;">
+          <h3 style="font-size: 1.2rem; margin-bottom: 1rem; color: #60a5fa;">📊 Generation Demand by Domain</h3>
+          <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+            {% for ds in stats.domain_stats %}
+              <div style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); padding: 0.5rem 1rem; border-radius: var(--radius-md); font-size: 0.9rem;">
+                <strong>{{ ds.domain }}:</strong> <span style="color: #c084fc; font-weight: 700;">{{ ds.count }} generations</span>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- PROJECTS MANAGEMENT TABLE -->
+      <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="font-size: 1.5rem;">All Project Ideas ({{ projects | length }})</h2>
+      </div>
+
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Domain</th>
+              <th>Title</th>
+              <th>Technologies</th>
+              <th>Difficulty</th>
+              <th>Duration</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in projects %}
+              <tr>
+                <td>#{{ p.id }}</td>
+                <td><span class="badge badge-domain">{{ p.domain }}</span></td>
+                <td><strong style="color: #fff;">{{ p.title }}</strong></td>
+                <td style="max-width: 250px; font-size: 0.85rem; color: var(--text-muted);">{{ p.technologies }}</td>
+                <td><span class="badge badge-difficulty-{{ p.difficulty | lower }}">{{ p.difficulty }}</span></td>
+                <td>{{ p.duration or '4-6 Weeks' }}</td>
+                <td>
+                  <div style="display: flex; gap: 0.5rem;">
+                    <button 
+                      class="btn btn-secondary" 
+                      style="padding: 0.35rem 0.75rem; font-size: 0.8rem;"
+                      onclick='populateEditModal({{ p | tojson }})'
+                    >
+                      ✏️ Edit
+                    </button>
+
+                    <form action="{{ url_for('admin_delete_project', project_id=p.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this project idea?');" style="display: inline;">
+                      <button type="submit" class="btn btn-danger" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                        🗑️ Delete
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ADD PROJECT MODAL -->
+      <div class="modal-backdrop" id="addModal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Add New Project Idea</h3>
+            <button class="modal-close" onclick="closeModal('addModal')">&times;</button>
+          </div>
+
+          <form action="{{ url_for('admin_add_project') }}" method="POST">
+            <div class="form-group">
+              <label class="form-label">Domain</label>
+              <select name="domain" class="form-select" required>
+                {% for d in domains %}
+                  <option value="{{ d }}">{{ d }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Project Title</label>
+              <input type="text" name="title" class="form-control" placeholder="e.g. Automated Malware Analyzer" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Detailed Description</label>
+              <textarea name="description" class="form-control" rows="3" placeholder="Provide a detailed explanation of the project objective..." required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Technologies Required (Comma Separated)</label>
+              <input type="text" name="technologies" class="form-control" placeholder="Python, Flask, Docker, Scapy" required>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">Difficulty Level</label>
+                <select name="difficulty" class="form-select" required>
+                  {% for diff in difficulties %}
+                    <option value="{{ diff }}">{{ diff }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Expected Duration</label>
+                <input type="text" name="duration" class="form-control" value="4-6 Weeks" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Implementation Steps (One step per line)</label>
+              <textarea name="steps" class="form-control" rows="3" placeholder="Step 1: System setup&#10;Step 2: Database design&#10;Step 3: Frontend development"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Future Enhancements (One enhancement per line)</label>
+              <textarea name="enhancements" class="form-control" rows="2" placeholder="Cloud deployment&#10;AI Chatbot integration"></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+              <button type="button" class="btn btn-secondary" onclick="closeModal('addModal')">Cancel</button>
+              <button type="submit" class="btn btn-primary">Save Project</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- EDIT PROJECT MODAL -->
+      <div class="modal-backdrop" id="editModal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Edit Project Idea</h3>
+            <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
+          </div>
+
+          <form id="edit-form" action="" method="POST">
+            <input type="hidden" id="edit-project-id" name="project_id">
+
+            <div class="form-group">
+              <label class="form-label">Domain</label>
+              <select id="edit-domain" name="domain" class="form-select" required>
+                {% for d in domains %}
+                  <option value="{{ d }}">{{ d }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Project Title</label>
+              <input type="text" id="edit-title" name="title" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Detailed Description</label>
+              <textarea id="edit-description" name="description" class="form-control" rows="3" required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Technologies Required</label>
+              <input type="text" id="edit-technologies" name="technologies" class="form-control" required>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">Difficulty Level</label>
+                <select id="edit-difficulty" name="difficulty" class="form-select" required>
+                  {% for diff in difficulties %}
+                    <option value="{{ diff }}">{{ diff }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Expected Duration</label>
+                <input type="text" id="edit-duration" name="duration" class="form-control" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Implementation Steps (One per line)</label>
+              <textarea id="edit-steps" name="steps" class="form-control" rows="3"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Future Enhancements (One per line)</label>
+              <textarea id="edit-enhancements" name="enhancements" class="form-control" rows="2"></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+              <button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">Cancel</button>
+              <button type="submit" class="btn btn-primary">Update Project</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    {% endif %}
+
+  </div>
+
+  <footer>
+    <p>© 2026 AI-Powered Project Idea Generator. Administrator Portal.</p>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

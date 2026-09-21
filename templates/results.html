@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recommendations for {{ student_name }} | IdeaGen AI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <a href="{{ url_for('index') }}" class="nav-brand">
+      <svg viewBox="0 0 24 24" width="30" height="30" fill="url(#brandGradient)">
+        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+      </svg>
+      <span>IdeaGen AI</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="{{ url_for('index') }}" class="nav-link">Home</a></li>
+      <li><a href="{{ url_for('generator') }}" class="nav-link">Generator</a></li>
+      <li><a href="{{ url_for('view_saved') }}" class="nav-link">Saved Ideas</a></li>
+      <li><a href="{{ url_for('admin_dashboard') }}" class="nav-link">Admin Panel</a></li>
+    </ul>
+  </nav>
+
+  <div class="container">
+    
+    <!-- Header Summary -->
+    <div class="results-header">
+      <div>
+        <h1 style="font-size: 2.2rem; margin-bottom: 0.5rem;">
+          Recommended Projects for <span style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ student_name }}</span>
+        </h1>
+        <p style="color: var(--text-muted); font-size: 1.05rem;">
+          Domain: <strong style="color: #fff;">{{ domain }}</strong> &nbsp;|&nbsp; 
+          Target Difficulty: <strong style="color: #fff;">{{ difficulty }}</strong> &nbsp;|&nbsp; 
+          Skills Filter: <strong style="color: #fff;">{{ skills or 'All' }}</strong>
+        </p>
+      </div>
+
+      <div style="display: flex; gap: 1rem;">
+        <a href="{{ url_for('generator') }}" class="btn btn-secondary">
+          🔄 Modify Inputs
+        </a>
+        <a href="{{ url_for('view_saved') }}" class="btn btn-primary">
+          📂 View Saved Library
+        </a>
+      </div>
+    </div>
+
+    <!-- Recommendations Count Badge -->
+    <div style="margin-bottom: 2rem; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); padding: 0.75rem 1.25rem; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between;">
+      <span style="font-weight: 600; color: #60a5fa;">
+        💡 Generated {{ total_found }} Intelligent Project Recommendations for You
+      </span>
+      <span style="font-size: 0.85rem; color: var(--text-muted);">Ranked by Skill Relevance & Curriculum Fit</span>
+    </div>
+
+    <!-- Recommendations List Grid -->
+    <div class="results-grid">
+      {% for proj in recommendations %}
+        <div class="project-card">
+          
+          <div class="project-header">
+            <div>
+              <h2 class="project-title">{{ loop.index }}. {{ proj.title }}</h2>
+            </div>
+            
+            <div class="badge-group">
+              <span class="badge badge-domain">{{ proj.domain }}</span>
+              <span class="badge badge-difficulty-{{ proj.difficulty | lower }}">{{ proj.difficulty }}</span>
+              <span class="badge badge-duration">⏱️ {{ proj.duration or '4-6 Weeks' }}</span>
+            </div>
+          </div>
+
+          <p class="project-desc">{{ proj.description }}</p>
+
+          <!-- Technologies Required -->
+          <div class="tech-stack">
+            <div class="tech-title">Required Technologies & Frameworks</div>
+            <div class="tech-tags">
+              {% for tech in proj.technologies.split(',') %}
+                <span class="tech-pill">{{ tech.strip() }}</span>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Implementation Steps -->
+          <div class="steps-section">
+            <div class="steps-title">
+              <span>📋 Step-by-Step Implementation Roadmap</span>
+            </div>
+            <ol class="steps-list">
+              {% for step in proj.implementation_steps %}
+                <li>{{ step }}</li>
+              {% endfor %}
+            </ol>
+          </div>
+
+          <!-- Future Enhancements -->
+          <div class="enhancements-section">
+            <div class="enhancements-title">🚀 Future Scope & Enhancements</div>
+            <ul style="padding-left: 1.25rem; color: #e0e7ff; font-size: 0.95rem;">
+              {% for enh in proj.future_enhancements %}
+                <li style="margin-bottom: 0.3rem;">{{ enh }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+
+          <!-- Footer Actions -->
+          <div class="project-footer">
+            <button 
+              class="btn btn-secondary btn-copy-project"
+              type="button"
+            >
+              📋 Copy Summary
+            </button>
+
+            <button 
+              class="btn btn-primary btn-save-project"
+              data-project-id="{{ proj.id }}"
+              data-user-id="{{ user_id }}"
+              data-student-name="{{ student_name }}"
+              type="button"
+            >
+              ⭐ Save to My Library
+            </button>
+          </div>
+
+        </div>
+      {% endfor %}
+    </div>
+
+  </div>
+
+  <footer>
+    <p>© 2026 AI-Powered Project Idea Generator. Elevate Academic Innovation.</p>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
